@@ -1,0 +1,41 @@
+# Jarvis Core Dependencies
+# Install with: pip install -r requirements.txt
+# UPDATED: 2026-01-10 (post hostile review)
+
+# MCP SDK (requires pywin32 on Windows)
+mcp>=1.0.0
+pywin32>=310 ; sys_platform == 'win32'
+
+# LLM Integration
+anthropic>=0.34.0
+httpx>=0.27.0
+
+# Voice Pipeline - STT
+faster-whisper>=1.0.0
+
+# Voice Pipeline - TTS (edge-tts instead of piper - works on Windows)
+edge-tts>=6.1.0
+
+# Audio I/O
+sounddevice>=0.4.6
+numpy>=1.24.0
+
+# Hotkey handling (pynput instead of keyboard - no admin required)
+pynput>=1.7.6
+
+# Memory & Storage
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+
+# Dashboard
+flask>=3.0.0
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# Utilities
+psutil>=5.9.0
+
+# Optional: GPU acceleration for faster-whisper
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121

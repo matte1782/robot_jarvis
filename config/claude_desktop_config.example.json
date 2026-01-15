@@ -1,0 +1,47 @@
+{
+  "_comment": "JARVIS MCP Configuration for Claude Desktop",
+  "_location": "Copy to %APPDATA%\\Claude\\claude_desktop_config.json",
+  "_instructions": [
+    "1. Replace YOUR_USERNAME with your Windows username",
+    "2. Replace PROJECT_PATH with actual path to robot_jarvis folder",
+    "3. Ensure Python 3.11+ is installed and in PATH",
+    "4. Run: pip install mcp pywin32 (pywin32 required on Windows)",
+    "5. Restart Claude Desktop after saving",
+    "6. Look for hammer icon in chat input to verify MCP is active"
+  ],
+
+  "globalShortcut": "Alt+C",
+
+  "mcpServers": {
+    "jarvis-filesystem": {
+      "_description": "Safe file operations within sandboxed workspace",
+      "command": "python",
+      "args": [
+        "PROJECT_PATH\\mcp_servers\\filesystem_server.py"
+      ],
+      "env": {
+        "JARVIS_WORKSPACE": "C:\\Users\\YOUR_USERNAME\\jarvis\\workspace"
+      }
+    },
+
+    "jarvis-shell": {
+      "_description": "Safe command execution with strict allowlist",
+      "command": "python",
+      "args": [
+        "PROJECT_PATH\\mcp_servers\\shell_server.py"
+      ]
+    },
+
+    "jarvis-memory": {
+      "_description": "Official Anthropic memory server for persistent context",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "MEMORY_FILE_PATH": "C:\\Users\\YOUR_USERNAME\\jarvis\\memory.jsonl"
+      }
+    }
+  }
+}

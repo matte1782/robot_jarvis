@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3a 100%);
+            color: #00ffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-shadow: 0 0 20px #00ffff;
+            letter-spacing: 0.2em;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .card {
+            background: rgba(0, 255, 255, 0.05);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .status-label {
+            color: #888;
+        }
+
+        .status-value {
+            font-weight: bold;
+        }
+
+        .status-online { color: #00ff00; }
+        .status-offline { color: #ff4444; }
+        .status-unknown { color: #ffaa00; }
+
+        .btn {
+            background: transparent;
+            border: 1px solid #00ffff;
+            color: #00ffff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: rgba(0, 255, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 68, 68, 0.2);
+        }
+
+        .messages {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .message {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .message.user {
+            border-left: 3px solid #00ff00;
+        }
+
+        .message.assistant {
+            border-left: 3px solid #00ffff;
+        }
+
+        .message-role {
+            font-size: 0.8em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .holographic-effect {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.3) 100%),
+                repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 255, 255, 0.03) 2px, rgba(0, 255, 255, 0.03) 4px);
+            z-index: 1000;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="holographic-effect"></div>
+
+    <div class="container">
+        <header>
+            <h1>J.A.R.V.I.S</h1>
+            <p class="subtitle">Just A Rather Very Intelligent System</p>
+        </header>
+
+        <div class="grid">
+            <div class="card">
+                <h2>System Status</h2>
+                <div id="status-container">
+                    <div class="status-item">
+                        <span class="status-label">Status</span>
+                        <span class="status-value" id="status">Loading...</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Uptime</span>
+                        <span class="status-value" id="uptime">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Ollama</span>
+                        <span class="status-value" id="ollama">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Model</span>
+                        <span class="status-value" id="model">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Mode</span>
+                        <span class="status-value" id="mode">-</span>
+                    </div>
+                </div>
+                <button class="btn" onclick="toggleMode()">Toggle Offline Mode</button>
+            </div>
+
+            <div class="card">
+                <h2>Conversation Memory</h2>
+                <div class="status-item">
+                    <span class="status-label">Messages</span>
+                    <span class="status-value" id="message-count">0</span>
+                </div>
+                <div class="messages" id="messages"></div>
+                <button class="btn btn-danger" onclick="clearMemory()">Clear Memory</button>
+            </div>
+
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <p style="color: #888; margin-bottom: 15px;">
+                    Voice control: Press F9 to talk
+                </p>
+                <button class="btn" onclick="refreshStatus()">Refresh Status</button>
+                <button class="btn" onclick="loadMemory()">Load History</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>JARVIS v1.0.0 | Built with Claude</p>
+        </footer>
+    </div>
+
+    <script>
+        async function refreshStatus() {
+            try {
+                const resp = await fetch('/api/status');
+                const data = await resp.json();
+
+                document.getElementById('status').textContent = data.status;
+                document.getElementById('status').className = 'status-value status-online';
+
+                const mins = Math.floor(data.uptime_seconds / 60);
+                const hrs = Math.floor(mins / 60);
+                document.getElementById('uptime').textContent =
+                    hrs > 0 ? hrs + 'h ' + (mins % 60) + 'm' : mins + 'm';
+
+                const ollamaEl = document.getElementById('ollama');
+                ollamaEl.textContent = data.ollama;
+                ollamaEl.className = 'status-value status-' + data.ollama;
+
+                document.getElementById('model').textContent = data.model;
+                document.getElementById('mode').textContent =
+                    data.offline_mode ? 'Offline' : 'Online';
+                document.getElementById('message-count').textContent =
+                    data.memory_messages;
+            } catch (e) {
+                document.getElementById('status').textContent = 'Error';
+                document.getElementById('status').className = 'status-value status-offline';
+            }
+        }
+
+        async function loadMemory() {
+            try {
+                const resp = await fetch('/api/memory');
+                const data = await resp.json();
+
+                const container = document.getElementById('messages');
+                // Clear existing messages safely
+                while (container.firstChild) {
+                    container.removeChild(container.firstChild);
+                }
+
+                data.messages.forEach(function(msg) {
+                    const div = document.createElement('div');
+                    div.className = 'message ' + msg.role;
+
+                    const roleDiv = document.createElement('div');
+                    roleDiv.className = 'message-role';
+                    roleDiv.textContent = msg.role;
+
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.textContent = msg.content;
+
+                    div.appendChild(roleDiv);
+                    div.appendChild(contentDiv);
+                    container.appendChild(div);
+                });
+
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                console.error('Failed to load memory', e);
+            }
+        }
+
+        async function clearMemory() {
+            if (!confirm('Clear all conversation history?')) return;
+
+            try {
+                await fetch('/api/memory/clear', { method: 'POST' });
+                loadMemory();
+                refreshStatus();
+            } catch (e) {
+                console.error('Failed to clear memory', e);
+            }
+        }
+
+        async function toggleMode() {
+            try {
+                const resp = await fetch('/api/status');
+                const data = await resp.json();
+
+                await fetch('/api/mode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ offline: !data.offline_mode })
+                });
+
+                refreshStatus();
+            } catch (e) {
+                console.error('Failed to toggle mode', e);
+            }
+        }
+
+        // Initial load
+        refreshStatus();
+        loadMemory();
+
+        // Auto-refresh every 5 seconds
+        setInterval(refreshStatus, 5000);
+    </script>
+</body>
+</html>

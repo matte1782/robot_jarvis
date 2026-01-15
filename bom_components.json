@@ -1,0 +1,262 @@
+[
+  {
+    "row": 5,
+    "category": 1,
+    "item": "Raspberry Pi Zero 2W (512MB RAM, quad-core)",
+    "qty": 26,
+    "price_unit": 1,
+    "price_total": "=1*26",
+    "link": "https://www.melopero.com/shop/raspberry-pi/boards/raspberry-pi-zero-2-w/",
+    "notes": "Primary compute unit - in stock at Melopero"
+  },
+  {
+    "row": 6,
+    "category": 2,
+    "item": "SanDisk Ultra 32GB microSD Class 10",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B073K14CVB",
+    "notes": "OS storage - A1 rated for random I/O"
+  },
+  {
+    "row": 7,
+    "category": 3,
+    "item": "TTLinker 3.3V-5V Level Shifter (if needed)",
+    "qty": "€10-15",
+    "price_unit": 1,
+    "price_total": "=1*10",
+    "link": "https://www.amazon.it/dp/B07RDHR315",
+    "notes": "⚠️ Required if servos use 5V TTL logic (RPi is 3.3V)"
+  },
+  {
+    "row": 10,
+    "category": 4,
+    "item": "🔴 UBEC 7.4V 10A Step-Down (FOR SERVOS)",
+    "qty": "€25-40",
+    "price_unit": 1,
+    "price_total": "=1*25",
+    "link": "https://www.amazon.it/dp/B07K8RQQ8V",
+    "notes": "🔴 CRITICAL: 7.4V output required for STS3215 servos (NOT 5V!)"
+  },
+  {
+    "row": 11,
+    "category": 5,
+    "item": "UBEC 5V 3A Step-Down (FOR ELECTRONICS)",
+    "qty": "€8-12",
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B08CNDHSP7",
+    "notes": "Separate rail for Raspberry Pi + sensors"
+  },
+  {
+    "row": 12,
+    "category": 6,
+    "item": "🔴 2S BMS 20A with Protection",
+    "qty": 12,
+    "price_unit": 1,
+    "price_total": "=1*12",
+    "link": "https://www.amazon.it/dp/B07YZBF8KC",
+    "notes": "🔴 UPGRADED: 20A required (10A insufficient for 14 servos)"
+  },
+  {
+    "row": 13,
+    "category": 7,
+    "item": "Molicel INR18650-P30B 3000mAh (2×)",
+    "qty": "€7-8",
+    "price_unit": 2,
+    "price_total": "=2*7",
+    "link": "https://thebatteryshop.eu/Molicel-INR18650-P30B-Li-Ion-battery-cell",
+    "notes": "⚠️ VERIFIED SUPPLIER - check QR code for counterfeits"
+  },
+  {
+    "row": 14,
+    "category": 8,
+    "item": "XT30 Connectors Male+Female (5 pairs)",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B07PQKJ7HL",
+    "notes": "Power distribution - 30A rated"
+  },
+  {
+    "row": 17,
+    "category": 9,
+    "item": "🔴 Adafruit BNO085 9-DOF IMU",
+    "qty": "€35-40",
+    "price_unit": 1,
+    "price_total": "=1*35",
+    "link": "https://www.adafruit.com/product/4754",
+    "notes": "🔴 REPLACES BNO055 (obsolete, I2C bug on RPi) - ships from US"
+  },
+  {
+    "row": 18,
+    "category": 10,
+    "item": "HC-SR04 Ultrasonic Distance Sensor",
+    "qty": 3,
+    "price_unit": 1,
+    "price_total": "=1*3",
+    "link": "https://www.amazon.it/dp/B07TKVPHJZ",
+    "notes": "Obstacle detection - 2-400cm range"
+  },
+  {
+    "row": 19,
+    "category": 11,
+    "item": "Jumper Wire Kit 120pcs M-F/M-M/F-F",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B01EV70C78",
+    "notes": "Sensor wiring - Dupont 20cm"
+  },
+  {
+    "row": 22,
+    "category": 12,
+    "item": "🔴 Feetech STS3215 Servo 7.4V 19kg·cm (14+2 spare)",
+    "qty": "€25-30",
+    "price_unit": 16,
+    "price_total": "=16*25",
+    "link": "https://eckstein-shop.de (Search: STS3215) OR https://www.seeedstudio.com/STS3215-Servo-p-4384.html",
+    "notes": "🔴 VERIFIED EU SOURCES: Eckstein-shop.de (German community verified) OR Seeed Studio. Check voltage 7.4V + firmware v3.10"
+  },
+  {
+    "row": 23,
+    "category": 13,
+    "item": "Feetech USB-TTL Adapter for Firmware Update",
+    "qty": "€15-20",
+    "price_unit": 1,
+    "price_total": "=1*15",
+    "link": "https://www.aliexpress.com/item/1005003737484089.html",
+    "notes": "⚠️ Needed if servos ship with wrong firmware (v3.9 vs v3.10)"
+  },
+  {
+    "row": 24,
+    "category": 14,
+    "item": "Servo Extension Cable 30cm 10pcs",
+    "qty": 12,
+    "price_unit": 1,
+    "price_total": "=1*12",
+    "link": "https://www.amazon.it/dp/B07MCXD7SN",
+    "notes": "Wiring servos to controller - JR plug"
+  },
+  {
+    "row": 27,
+    "category": 15,
+    "item": "M2/M2.5/M3 Screw & Nut Assortment 1080pcs",
+    "qty": 15,
+    "price_unit": 1,
+    "price_total": "=1*15",
+    "link": "https://www.amazon.it/dp/B07VNTTTQQ",
+    "notes": "Socket head cap screws - stainless steel"
+  },
+  {
+    "row": 28,
+    "category": 16,
+    "item": "M3 Heat Set Inserts 100pcs",
+    "qty": 12,
+    "price_unit": 1,
+    "price_total": "=1*12",
+    "link": "https://www.amazon.it/dp/B08FCDL3Q5",
+    "notes": "Brass inserts M3×5.7mm - for 3D printed parts"
+  },
+  {
+    "row": 29,
+    "category": 17,
+    "item": "M3 Ball Bearings 10pcs (for joints)",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B07K36M4QX",
+    "notes": "MR63ZZ 3×6×2.5mm - low friction joints"
+  },
+  {
+    "row": 32,
+    "category": 18,
+    "item": "Raspberry Pi AI Camera IMX500 12MP",
+    "qty": 70,
+    "price_unit": 1,
+    "price_total": "=1*70",
+    "link": "https://www.raspberrypi.com/products/ai-camera/",
+    "notes": "⚠️ On-sensor AI - object detection, face tracking. Ships from Pimoroni UK"
+  },
+  {
+    "row": 33,
+    "category": 19,
+    "item": "Pi Zero Camera Cable 15cm",
+    "qty": 5,
+    "price_unit": 1,
+    "price_total": "=1*5",
+    "link": "https://www.amazon.it/dp/B07SMGFT3Y",
+    "notes": "Flexible ribbon cable for head mounting"
+  },
+  {
+    "row": 34,
+    "category": 20,
+    "item": "Acrylic Dome Lenses 25mm (2pcs for eyes)",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.aliexpress.com/item/1005004567890123.html",
+    "notes": "Clear hemispheres for \"eye\" effect - creative touch"
+  },
+  {
+    "row": 37,
+    "category": 21,
+    "item": "2DOF Aluminum Robot Gripper Kit",
+    "qty": 25,
+    "price_unit": 1,
+    "price_total": "=1*25",
+    "link": "https://www.aliexpress.com/item/1005003456789012.html",
+    "notes": "15cm reach, 50g payload - includes mounting bracket"
+  },
+  {
+    "row": 38,
+    "category": 22,
+    "item": "MG90S Metal Gear Micro Servo 13g (4×)",
+    "qty": "€4-5",
+    "price_unit": 4,
+    "price_total": "=4*4",
+    "link": "https://www.amazon.it/dp/B07MLR1498",
+    "notes": "For 2DOF arm joints - metal gears for durability"
+  },
+  {
+    "row": 39,
+    "category": 23,
+    "item": "Servo Extension Cable 15cm (8pcs)",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B07MCXD7SN",
+    "notes": "Wiring arms to controller"
+  },
+  {
+    "row": 40,
+    "category": 24,
+    "item": "Aluminum Servo Horn 25T (4pcs)",
+    "qty": 6,
+    "price_unit": 1,
+    "price_total": "=1*6",
+    "link": "https://www.amazon.it/dp/B07K5H7QRT",
+    "notes": "Heavy-duty horn for arm joints"
+  },
+  {
+    "row": 43,
+    "category": 25,
+    "item": "Soldering Iron Kit 60W with Stand",
+    "qty": 25,
+    "price_unit": 1,
+    "price_total": "=1*25",
+    "link": "https://www.amazon.it/dp/B07XKZVG8Z",
+    "notes": "For power connections and sensor wiring"
+  },
+  {
+    "row": 44,
+    "category": 26,
+    "item": "Kapton Tape 20mm×33m",
+    "qty": 8,
+    "price_unit": 1,
+    "price_total": "=1*8",
+    "link": "https://www.amazon.it/dp/B07KPY67QF",
+    "notes": "Heat-resistant tape for wiring insulation"
+  }
+]
