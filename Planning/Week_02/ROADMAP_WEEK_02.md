@@ -76,7 +76,30 @@ SCL      ────►  Pin 5  (GPIO3) - Shared I2C bus
 ```bash
 sudo i2cdetect -y 1
 # Expected: 0x40 (PCA9685) + 0x4A (BNO085)
+# Alternative: 0x4B (if address pin is HIGH)
 ```
+
+#### BNO085 FAILURE CONTINGENCY (CRITICAL)
+
+**If BNO085 not detected at 0x4A:**
+1. **Try alternate address 0x4B** (address pin may be HIGH)
+   ```bash
+   sudo i2cdetect -y 1
+   # Look for 0x4B instead of 0x4A
+   ```
+2. **Verify wiring** (SDA↔SDA, SCL↔SCL - Day 6 lesson!)
+3. **Check 3.3V power** with multimeter
+4. **Try second BNO085 board** if available
+
+**Hard Stop: 30 minutes maximum troubleshooting**
+- If still not working after 30 min → PIVOT to animation timing
+- Do NOT spend entire morning on BNO085
+- IMU integration can move to Day 9 or later
+
+**Fallback Plan:**
+- Proceed with animation timing system (Day 8 PM)
+- BNO085 debugging moves to spare time or Day 9 buffer
+- Software-first approach: build driver with mocks, test when hardware works
 
 **Driver Implementation - TDD First (90 min):**
 
@@ -597,7 +620,24 @@ class TestFullAnimationSystem:
 
 **Time Budget:** 4-6 hours (single focused session)
 
-This day can be inserted ANYTIME batteries arrive. All software is ready.
+#### BATTERY ARRIVAL WINDOW RULES (CRITICAL)
+
+**Morning Windows ONLY (before 11:00):**
+- If batteries arrive before 11:00 → Start battery integration that day
+- Morning sessions allow full 4-6 hour integration window
+- Safety testing requires focused, uninterrupted time
+
+**Afternoon Arrivals (after 11:00):**
+- If batteries arrive after 11:00 → DEFER to next day morning
+- Do NOT start battery integration with <4 hours remaining
+- Continue software work for remainder of day
+
+**Day 14 Special Case:**
+- If batteries arrive Day 14 morning → Proceed with integration
+- If batteries arrive Day 14 afternoon → DEFER to Week 03
+- Week 02 closes on Day 14 regardless of battery status
+
+**Rationale:** Battery integration is safety-critical. Rushed testing with inadequate time risks hardware damage, safety incidents, and incomplete validation. A morning start ensures full attention and proper safety protocols.
 
 #### Power System Validation (1 hour)
 ```
@@ -646,13 +686,15 @@ This day can be inserted ANYTIME batteries arrive. All software is ready.
 | Day | Focus | Tests Added | Cumulative |
 |-----|-------|-------------|------------|
 | Day 8 | BNO085 + Animation timing | +50 | 502 |
-| Day 9 | Easing + LED Patterns | +45 | 547 |
-| Day 10 | Emotion System | +40 | 587 |
-| Day 11 | Head Controller + Color | +35 | 622 |
-| Day 12 | Integration tests | +30 | 652 |
-| Day 13 | Polish + edge cases | +15 | 667 |
-| Day 14 | Final validation | +5 | 672 |
-| [BATTERY] | Hardware tests | +25 | 697 |
+| Day 9 | Easing + LED Patterns | +48 | 550 |
+| Day 10 | Emotion System | +40 | 590 |
+| Day 11 | Head Controller + Color | +35 | 625 |
+| Day 12 | Integration tests | +35 | 660 |
+| Day 13 | Polish + edge cases | +15 | 675 |
+| Day 14 | Final validation | +5 | 680 |
+| [BATTERY] | Hardware tests | +20 | 700 |
+
+**Week 02 Test Target: 700 tests** (standardized across all planning documents)
 
 ---
 

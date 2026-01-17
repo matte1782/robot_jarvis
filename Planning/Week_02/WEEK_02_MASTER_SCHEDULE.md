@@ -24,11 +24,13 @@ Week 02 is a **hardware integration week** with significant dependency on delive
 
 | Metric | Target | Stretch Goal |
 |--------|--------|--------------|
-| Test Count | 600+ | 700+ |
+| Test Count | 700 | 750+ |
 | Test Pass Rate | 95%+ | 98%+ |
 | Lines of Code | 8,500+ | 10,000+ |
 | Hardware Validations | 2+ (IMU, servos if arrived) | 4+ |
 | Hostile Reviews | 5+ | 7+ |
+
+**Note:** Test count target standardized to 700 across all Week 02 planning documents.
 
 ---
 
@@ -37,8 +39,11 @@ Week 02 is a **hardware integration week** with significant dependency on delive
 ```
 WEEK 02: 22-28 January 2026
 
-                    | Mon | Tue | Wed | Thu | Fri | Sat | Sun |
+NOTE: Day 1 was Wednesday 15 Jan, so Day 8 = Wednesday 22 Jan
+
+                    | Wed | Thu | Fri | Sat | Sun | Mon | Tue |
                     | D8  | D9  | D10 | D11 | D12 | D13 | D14 |
+                    | 22  | 23  | 24  | 25  | 26  | 27  | 28  |
 --------------------+-----+-----+-----+-----+-----+-----+-----+
 BNO085 INTEGRATION  |#####|###  |     |     |     |     |     |
                     |=====|===  |     |     |     |     |     |
@@ -327,15 +332,17 @@ If critical issues arise:
 
 ## Success Metrics by Day
 
-| Day | Tests | LOC | Hardware | Key Deliverable |
-|-----|-------|-----|----------|-----------------|
-| Day 8 | 502+ | 7000+ | IMU validated | BNO085 driver working |
-| Day 9 | 550+ | 7500+ | - | Easing + patterns |
-| Day 10 | 590+ | 8000+ | Servos maybe | Emotion system |
-| Day 11 | 625+ | 8500+ | - | Head controller |
-| Day 12 | 660+ | 9000+ | Batteries maybe | Idle behaviors |
-| Day 13 | 680+ | 9200+ | HW if arrived | Polish complete |
-| Day 14 | 700+ | 9500+ | HW demo maybe | v0.2.0 tagged |
+| Day | Date | Tests | LOC | Hardware | Key Deliverable |
+|-----|------|-------|-----|----------|-----------------|
+| Day 8 | Wed 22 | 502+ | 7000+ | IMU validated | BNO085 driver working |
+| Day 9 | Thu 23 | 550+ | 7500+ | - | Easing + patterns |
+| Day 10 | Fri 24 | 590+ | 8000+ | Servos maybe | Emotion system |
+| Day 11 | Sat 25 | 625+ | 8500+ | - | Head controller |
+| Day 12 | Sun 26 | 660+ | 9000+ | Batteries maybe | Idle behaviors |
+| Day 13 | Mon 27 | 675+ | 9200+ | HW if arrived | Polish complete |
+| Day 14 | Tue 28 | 700 | 9500+ | HW demo maybe | v0.2.0 tagged |
+
+**Week 02 Final Target: 700 tests** (standardized across all documents)
 
 ---
 

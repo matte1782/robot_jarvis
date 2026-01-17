@@ -1,9 +1,11 @@
 # Day 9 - Thursday, 23 January 2026
-## Easing Functions Library + LED Pattern System
+## Animation Timing + Easing Functions + LED Patterns
 
 **Day Type:** SOFTWARE + HARDWARE VALIDATION
-**Time Budget:** 6-8 hours
+**Time Budget:** 7-9 hours (EXPANDED - includes Animation Timing from Day 8)
 **Critical Path:** YES - Foundation for emotion system
+
+**SCOPE CHANGE:** Animation Timing System moved here from Day 8 to reduce Day 8 scope overload.
 
 ---
 
@@ -11,8 +13,8 @@
 
 ### Verify Day 8 Completion
 - [ ] BNO085 driver working (or documented blocker)
-- [ ] Animation timing system tested
-- [ ] All Day 8 tests passing
+- [ ] BNO085 tests passing (~30 tests)
+- [ ] All Day 8 tests passing (480+)
 - [ ] CHANGELOG updated
 
 ### Dependencies
@@ -22,9 +24,225 @@
 
 ---
 
-## Morning Session (3-4 hours)
+## Morning Session (4 hours)
 
-### Block 1: Complete Easing Function Library (90 min)
+### Block 1: Animation Timing System - TDD (120 min) [MOVED FROM DAY 8]
+
+**Target:** Keyframe interpolation system with 20+ tests
+
+#### Create Test File FIRST
+```python
+# firmware/tests/test_animation/test_timing.py
+
+import pytest
+import math
+from src.animation.timing import Keyframe, AnimationSequence
+
+
+class TestKeyframe:
+    """Test keyframe data structure"""
+
+    def test_creation_basic(self):
+        kf = Keyframe(time_ms=0, positions={'servo1': 90})
+        assert kf.time_ms == 0
+        assert kf.positions['servo1'] == 90
+
+    def test_creation_multiple_servos(self):
+        kf = Keyframe(time_ms=100, positions={'pan': 45, 'tilt': 30})
+        assert kf.positions['pan'] == 45
+        assert kf.positions['tilt'] == 30
+
+    def test_default_easing(self):
+        kf = Keyframe(time_ms=0, positions={})
+        assert kf.easing == 'ease_in_out'
+
+    def test_custom_easing(self):
+        kf = Keyframe(time_ms=0, positions={}, easing='linear')
+        assert kf.easing == 'linear'
+
+
+class TestAnimationSequence:
+    """Test animation sequence interpolation"""
+
+    def test_creation(self):
+        seq = AnimationSequence("test")
+        assert seq.name == "test"
+        assert len(seq.keyframes) == 0
+
+    def test_add_keyframe(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(0, {'servo1': 0})
+        assert len(seq.keyframes) == 1
+
+    def test_keyframes_sorted_by_time(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(1000, {'s': 100})
+        seq.add_keyframe(0, {'s': 0})
+        seq.add_keyframe(500, {'s': 50})
+        times = [kf.time_ms for kf in seq.keyframes]
+        assert times == [0, 500, 1000]
+
+    def test_linear_interpolation_midpoint(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(0, {'servo1': 0}, easing='linear')
+        seq.add_keyframe(1000, {'servo1': 100}, easing='linear')
+        result = seq.get_position(500)
+        assert result['servo1'] == 50
+
+    def test_position_at_keyframe_exact(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(0, {'servo1': 0})
+        seq.add_keyframe(1000, {'servo1': 100})
+        result = seq.get_position(0)
+        assert result['servo1'] == 0
+        result = seq.get_position(1000)
+        assert result['servo1'] == 100
+
+    def test_position_before_first_keyframe(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(100, {'servo1': 50})
+        result = seq.get_position(0)
+        assert result['servo1'] == 50  # Hold first position
+
+    def test_position_after_last_keyframe(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(0, {'servo1': 0})
+        seq.add_keyframe(100, {'servo1': 100})
+        result = seq.get_position(200)
+        assert result['servo1'] == 100  # Hold last position
+
+    def test_duration_property(self):
+        seq = AnimationSequence("test")
+        seq.add_keyframe(0, {'servo1': 0})
+        seq.add_keyframe(1500, {'servo1': 100})
+        assert seq.duration_ms == 1500
+
+    def test_empty_sequence_duration(self):
+        seq = AnimationSequence("test")
+        assert seq.duration_ms == 0
+```
+
+#### Create Implementation
+```python
+# firmware/src/animation/timing.py
+
+"""
+Animation Timing System
+
+Provides keyframe-based animation with multiple easing functions.
+Disney's 12 principles applied: timing, slow-in/slow-out.
+"""
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Callable
+import math
+
+
+@dataclass
+class Keyframe:
+    """Single keyframe in an animation sequence"""
+    time_ms: int
+    positions: Dict[str, float]
+    easing: str = 'ease_in_out'
+
+
+class AnimationSequence:
+    """
+    Sequence of keyframes with interpolation.
+
+    Supports multiple easing functions:
+    - linear: constant speed
+    - ease_in: slow start
+    - ease_out: slow end
+    - ease_in_out: slow start and end (Disney style)
+    """
+
+    def __init__(self, name: str):
+        self.name = name
+        self.keyframes: List[Keyframe] = []
+        self._easing_funcs = {
+            'linear': self._ease_linear,
+            'ease_in': self._ease_in,
+            'ease_out': self._ease_out,
+            'ease_in_out': self._ease_in_out,
+        }
+
+    def add_keyframe(self, time_ms: int, positions: Dict[str, float],
+                     easing: str = 'ease_in_out'):
+        """Add a keyframe and keep sorted by time"""
+        self.keyframes.append(Keyframe(time_ms, positions, easing))
+        self.keyframes.sort(key=lambda k: k.time_ms)
+
+    @property
+    def duration_ms(self) -> int:
+        """Total duration of the animation"""
+        if not self.keyframes:
+            return 0
+        return self.keyframes[-1].time_ms
+
+    def get_position(self, time_ms: int) -> Dict[str, float]:
+        """Get interpolated positions at given time."""
+        if not self.keyframes:
+            return {}
+
+        # Before first keyframe: hold first position
+        if time_ms <= self.keyframes[0].time_ms:
+            return self.keyframes[0].positions.copy()
+
+        # After last keyframe: hold last position
+        if time_ms >= self.keyframes[-1].time_ms:
+            return self.keyframes[-1].positions.copy()
+
+        # Find surrounding keyframes and interpolate
+        for i, kf in enumerate(self.keyframes):
+            if kf.time_ms > time_ms:
+                kf_before = self.keyframes[i-1]
+                kf_after = kf
+                break
+        else:
+            return self.keyframes[-1].positions.copy()
+
+        # Calculate progress (0 to 1)
+        time_range = kf_after.time_ms - kf_before.time_ms
+        if time_range == 0:
+            return kf_before.positions.copy()
+
+        linear_progress = (time_ms - kf_before.time_ms) / time_range
+        easing_func = self._easing_funcs.get(kf_before.easing, self._ease_linear)
+        eased_progress = easing_func(linear_progress)
+
+        # Interpolate all positions
+        result = {}
+        all_keys = set(kf_before.positions.keys()) | set(kf_after.positions.keys())
+        for key in all_keys:
+            start = kf_before.positions.get(key, 0)
+            end = kf_after.positions.get(key, start)
+            result[key] = start + (end - start) * eased_progress
+        return result
+
+    @staticmethod
+    def _ease_linear(t: float) -> float:
+        return t
+
+    @staticmethod
+    def _ease_in(t: float) -> float:
+        return t * t
+
+    @staticmethod
+    def _ease_out(t: float) -> float:
+        return 1 - (1 - t) ** 2
+
+    @staticmethod
+    def _ease_in_out(t: float) -> float:
+        if t < 0.5:
+            return 2 * t * t
+        else:
+            return 1 - (-2 * t + 2) ** 2 / 2
+```
+
+---
+
+### Block 2: Complete Easing Function Library (90 min)
 
 **Target:** 8+ easing functions with 30+ tests
 

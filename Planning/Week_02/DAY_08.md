@@ -1,9 +1,12 @@
 # Day 8 - Wednesday, 22 January 2026
-## BNO085 IMU Integration + Animation Timing Infrastructure
+## BNO085 IMU Integration & Validation (FOCUSED)
 
 **Day Type:** HARDWARE + SOFTWARE
-**Time Budget:** 6-8 hours
+**Time Budget:** 5-6 hours (REDUCED - Animation Timing moved to Day 9)
 **Critical Path:** YES - First IMU integration
+
+**SCOPE CHANGE:** Animation Timing System moved to Day 9 to reduce scope overload.
+Day 8 focuses ONLY on BNO085 integration and validation.
 
 ---
 
@@ -39,7 +42,7 @@
 BNO085 Board          Raspberry Pi 4
 (Adafruit)
 -----------           ---------------
-VIN         ────────► Pin 1  (3.3V)    Note: NOT 5V!
+VIN         ────────► Pin 1  (3.3V)    Note: 3-5V OK (onboard regulator), 3.3V preferred
 GND         ────────► Pin 9  (GND)     Or Pin 6
 SDA         ────────► Pin 3  (GPIO2)   Shared with PCA9685
 SCL         ────────► Pin 5  (GPIO3)   Shared with PCA9685
@@ -166,7 +169,8 @@ class TestQuaternionConversion:
 
     def test_identity_quaternion(self):
         """Identity quaternion = no rotation"""
-        quat = (1.0, 0.0, 0.0, 0.0)  # w, x, y, z
+        # Adafruit BNO08X order: (x, y, z, w) = (i, j, k, real)
+        quat = (0.0, 0.0, 0.0, 1.0)  # x, y, z, w - identity
         euler = BNO085Driver._quaternion_to_euler(quat)
         assert abs(euler.heading) < 0.1
         assert abs(euler.pitch) < 0.1
@@ -176,8 +180,10 @@ class TestQuaternionConversion:
         """90 degree yaw rotation"""
         import math
         # Quaternion for 90 degree rotation around Z
+        # Adafruit BNO08X order: (x, y, z, w)
         angle = math.pi / 2
-        quat = (math.cos(angle/2), 0, 0, math.sin(angle/2))
+        # x=0, y=0, z=sin(angle/2), w=cos(angle/2)
+        quat = (0, 0, math.sin(angle/2), math.cos(angle/2))
         euler = BNO085Driver._quaternion_to_euler(quat)
         assert abs(euler.heading - 90) < 1.0  # Within 1 degree
 
@@ -221,14 +227,23 @@ class TestCalibration:
 
 
 @pytest.fixture
+def mock_bno08x():
+    """Mock BNO08X_I2C sensor for testing without hardware"""
+    with patch('src.drivers.sensor.imu.bno085.BNO08X_I2C') as MockBNO08X:
+        mock_sensor = Mock()
+        # Default quaternion: identity (no rotation)
+        # Adafruit BNO08X returns (x, y, z, w) = (i, j, k, real)
+        mock_sensor.quaternion = (0.0, 0.0, 0.0, 1.0)  # identity quaternion
+        mock_sensor.calibration_status = 3  # Fully calibrated
+        MockBNO08X.return_value = mock_sensor
+        yield mock_sensor
+
+
+@pytest.fixture
 def mock_i2c():
-    """Mock I2C bus for testing without hardware"""
+    """Mock I2C bus for testing without hardware (legacy compatibility)"""
     mock = Mock()
     mock.scan.return_value = [0x4A]
-    # Default quaternion: identity (no rotation)
-    mock.readfrom_into.side_effect = lambda addr, buf: (
-        buf.__setitem__(slice(None), bytes([0, 0, 0, 0, 0, 0, 0x3F, 0x80]))  # w=1.0
-    )
     return mock
 ```
 
@@ -344,14 +359,18 @@ class BNO085Driver:
     @staticmethod
     def _quaternion_to_euler(quat) -> OrientationData:
         """
-        Convert quaternion (w, x, y, z) to Euler angles.
+        Convert quaternion to Euler angles.
+
+        IMPORTANT: Adafruit BNO08X returns quaternion as (i, j, k, real) = (x, y, z, w)
+        NOT the conventional (w, x, y, z) order!
 
         Uses aerospace convention:
         - Heading (yaw): rotation around Z
         - Pitch: rotation around Y
         - Roll: rotation around X
         """
-        w, x, y, z = quat
+        # Adafruit BNO08X returns (i, j, k, real) = (x, y, z, w)
+        x, y, z, w = quat
 
         # Roll (x-axis rotation)
         sinr_cosp = 2 * (w * x + y * z)
@@ -454,289 +473,98 @@ print(f'\nCalibration: {cal}')
 
 ---
 
-## Afternoon Session (3-4 hours)
+## Afternoon Session (2-3 hours)
 
-### Block 4: Animation Timing System - TDD (120 min)
+### Block 4: Extended BNO085 Validation (60 min)
 
-**Target:** Keyframe interpolation system with 40+ tests
+**Target:** Comprehensive IMU testing beyond basic detection
 
-#### Create Test File FIRST
-```python
-# firmware/tests/test_animation/test_timing.py
+#### Multi-Axis Rotation Test
+```bash
+# On Raspberry Pi - Extended validation
+cd ~/firmware
+python3 -c "
+from src.drivers.sensor.imu.bno085 import BNO085Driver
+import time
 
-import pytest
-import math
-from src.animation.timing import Keyframe, AnimationSequence
+print('=== BNO085 Extended Validation ===')
+imu = BNO085Driver()
 
+if not imu.is_connected:
+    print('ERROR: IMU not connected!')
+    exit(1)
 
-class TestKeyframe:
-    """Test keyframe data structure"""
+# Test 1: Stability test (30 seconds static)
+print('\n[TEST 1] Stability - Keep IMU stationary for 10 seconds')
+readings = []
+for _ in range(100):
+    data = imu.read_orientation()
+    if data:
+        readings.append((data.heading, data.pitch, data.roll))
+    time.sleep(0.1)
 
-    def test_creation_basic(self):
-        kf = Keyframe(time_ms=0, positions={'servo1': 90})
-        assert kf.time_ms == 0
-        assert kf.positions['servo1'] == 90
+if readings:
+    import statistics
+    headings = [r[0] for r in readings]
+    pitches = [r[1] for r in readings]
+    rolls = [r[2] for r in readings]
+    print(f'Heading: mean={statistics.mean(headings):.2f}, stdev={statistics.stdev(headings):.4f}')
+    print(f'Pitch:   mean={statistics.mean(pitches):.2f}, stdev={statistics.stdev(pitches):.4f}')
+    print(f'Roll:    mean={statistics.mean(rolls):.2f}, stdev={statistics.stdev(rolls):.4f}')
+    if statistics.stdev(headings) < 1.0 and statistics.stdev(pitches) < 1.0:
+        print('PASS: Stable readings')
+    else:
+        print('WARN: High noise detected')
 
-    def test_creation_multiple_servos(self):
-        kf = Keyframe(time_ms=100, positions={'pan': 45, 'tilt': 30})
-        assert kf.positions['pan'] == 45
-        assert kf.positions['tilt'] == 30
+# Test 2: Response test
+print('\n[TEST 2] Response - Rotate IMU 90 degrees around each axis')
+print('(Manual test - verify visually that readings change)')
 
-    def test_default_easing(self):
-        kf = Keyframe(time_ms=0, positions={})
-        assert kf.easing == 'ease_in_out'
-
-    def test_custom_easing(self):
-        kf = Keyframe(time_ms=0, positions={}, easing='linear')
-        assert kf.easing == 'linear'
-
-
-class TestAnimationSequence:
-    """Test animation sequence interpolation"""
-
-    def test_creation(self):
-        seq = AnimationSequence("test")
-        assert seq.name == "test"
-        assert len(seq.keyframes) == 0
-
-    def test_add_keyframe(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0})
-        assert len(seq.keyframes) == 1
-
-    def test_keyframes_sorted_by_time(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(1000, {'s': 100})
-        seq.add_keyframe(0, {'s': 0})
-        seq.add_keyframe(500, {'s': 50})
-        times = [kf.time_ms for kf in seq.keyframes]
-        assert times == [0, 500, 1000]
-
-    def test_linear_interpolation_midpoint(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0}, easing='linear')
-        seq.add_keyframe(1000, {'servo1': 100}, easing='linear')
-        result = seq.get_position(500)
-        assert result['servo1'] == 50
-
-    def test_linear_interpolation_quarter(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0}, easing='linear')
-        seq.add_keyframe(1000, {'servo1': 100}, easing='linear')
-        result = seq.get_position(250)
-        assert result['servo1'] == 25
-
-    def test_multiple_servos_interpolation(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'pan': 0, 'tilt': 90})
-        seq.add_keyframe(1000, {'pan': 90, 'tilt': 45})
-        result = seq.get_position(500)
-        assert 'pan' in result
-        assert 'tilt' in result
-        # Linear midpoints
-        assert 40 < result['pan'] < 50  # ~45 with easing
-        assert 60 < result['tilt'] < 75  # ~67.5 with easing
-
-    def test_position_at_keyframe_exact(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0})
-        seq.add_keyframe(1000, {'servo1': 100})
-        result = seq.get_position(0)
-        assert result['servo1'] == 0
-        result = seq.get_position(1000)
-        assert result['servo1'] == 100
-
-    def test_position_before_first_keyframe(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(100, {'servo1': 50})
-        result = seq.get_position(0)
-        assert result['servo1'] == 50  # Hold first position
-
-    def test_position_after_last_keyframe(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0})
-        seq.add_keyframe(100, {'servo1': 100})
-        result = seq.get_position(200)
-        assert result['servo1'] == 100  # Hold last position
-
-    def test_duration_property(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0})
-        seq.add_keyframe(1500, {'servo1': 100})
-        assert seq.duration_ms == 1500
-
-    def test_empty_sequence_duration(self):
-        seq = AnimationSequence("test")
-        assert seq.duration_ms == 0
-
-
-class TestEaseInOut:
-    """Test ease-in-out interpolation (default)"""
-
-    def test_ease_in_out_slower_at_start(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0}, easing='ease_in_out')
-        seq.add_keyframe(1000, {'servo1': 100}, easing='ease_in_out')
-        pos_25 = seq.get_position(250)['servo1']
-        # Ease-in-out: should be < 25 at 25% time
-        assert pos_25 < 25
-
-    def test_ease_in_out_faster_at_middle(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0}, easing='ease_in_out')
-        seq.add_keyframe(1000, {'servo1': 100}, easing='ease_in_out')
-        pos_50 = seq.get_position(500)['servo1']
-        # Ease-in-out: should be exactly 50 at midpoint
-        assert abs(pos_50 - 50) < 1
-
-    def test_ease_in_out_slower_at_end(self):
-        seq = AnimationSequence("test")
-        seq.add_keyframe(0, {'servo1': 0}, easing='ease_in_out')
-        seq.add_keyframe(1000, {'servo1': 100}, easing='ease_in_out')
-        pos_75 = seq.get_position(750)['servo1']
-        # Ease-in-out: should be > 75 at 75% time
-        assert pos_75 > 75
+print('\nExtended validation complete.')
+"
 ```
 
-#### Create Implementation
-```python
-# firmware/src/animation/timing.py
+#### I2C Bus Health Check
+```bash
+# Verify both devices still working after extended use
+sudo i2cdetect -y 1
+# Expected: 0x40 (PCA9685) AND 0x4A (BNO085)
 
-"""
-Animation Timing System
-
-Provides keyframe-based animation with multiple easing functions.
-Disney's 12 principles applied: timing, slow-in/slow-out.
-"""
-
-from dataclasses import dataclass, field
-from typing import Dict, List, Callable
-import math
-
-
-@dataclass
-class Keyframe:
-    """Single keyframe in an animation sequence"""
-    time_ms: int
-    positions: Dict[str, float]
-    easing: str = 'ease_in_out'
-
-
-class AnimationSequence:
-    """
-    Sequence of keyframes with interpolation.
-
-    Supports multiple easing functions:
-    - linear: constant speed
-    - ease_in: slow start
-    - ease_out: slow end
-    - ease_in_out: slow start and end (Disney style)
-    """
-
-    def __init__(self, name: str):
-        self.name = name
-        self.keyframes: List[Keyframe] = []
-        self._easing_funcs = {
-            'linear': self._ease_linear,
-            'ease_in': self._ease_in,
-            'ease_out': self._ease_out,
-            'ease_in_out': self._ease_in_out,
-        }
-
-    def add_keyframe(self, time_ms: int, positions: Dict[str, float],
-                     easing: str = 'ease_in_out'):
-        """Add a keyframe and keep sorted by time"""
-        self.keyframes.append(Keyframe(time_ms, positions, easing))
-        self.keyframes.sort(key=lambda k: k.time_ms)
-
-    @property
-    def duration_ms(self) -> int:
-        """Total duration of the animation"""
-        if not self.keyframes:
-            return 0
-        return self.keyframes[-1].time_ms
-
-    def get_position(self, time_ms: int) -> Dict[str, float]:
-        """
-        Get interpolated positions at given time.
-
-        Args:
-            time_ms: Time in milliseconds from animation start
-
-        Returns:
-            Dict mapping servo names to positions
-        """
-        if not self.keyframes:
-            return {}
-
-        # Before first keyframe: hold first position
-        if time_ms <= self.keyframes[0].time_ms:
-            return self.keyframes[0].positions.copy()
-
-        # After last keyframe: hold last position
-        if time_ms >= self.keyframes[-1].time_ms:
-            return self.keyframes[-1].positions.copy()
-
-        # Find surrounding keyframes
-        kf_before = self.keyframes[0]
-        kf_after = self.keyframes[-1]
-
-        for i, kf in enumerate(self.keyframes):
-            if kf.time_ms <= time_ms:
-                kf_before = kf
-            if kf.time_ms > time_ms:
-                kf_after = kf
-                break
-
-        # Calculate progress (0 to 1)
-        time_range = kf_after.time_ms - kf_before.time_ms
-        if time_range == 0:
-            return kf_before.positions.copy()
-
-        linear_progress = (time_ms - kf_before.time_ms) / time_range
-
-        # Apply easing
-        easing_func = self._easing_funcs.get(kf_before.easing, self._ease_linear)
-        eased_progress = easing_func(linear_progress)
-
-        # Interpolate all positions
-        result = {}
-        all_keys = set(kf_before.positions.keys()) | set(kf_after.positions.keys())
-
-        for key in all_keys:
-            start = kf_before.positions.get(key, 0)
-            end = kf_after.positions.get(key, start)
-            result[key] = start + (end - start) * eased_progress
-
-        return result
-
-    @staticmethod
-    def _ease_linear(t: float) -> float:
-        """Linear interpolation (no easing)"""
-        return t
-
-    @staticmethod
-    def _ease_in(t: float) -> float:
-        """Quadratic ease-in (slow start)"""
-        return t * t
-
-    @staticmethod
-    def _ease_out(t: float) -> float:
-        """Quadratic ease-out (slow end)"""
-        return 1 - (1 - t) ** 2
-
-    @staticmethod
-    def _ease_in_out(t: float) -> float:
-        """Quadratic ease-in-out (slow start and end)"""
-        if t < 0.5:
-            return 2 * t * t
-        else:
-            return 1 - (-2 * t + 2) ** 2 / 2
+# Check for I2C errors in kernel log
+dmesg | grep -i i2c | tail -10
 ```
 
 ---
 
-### Block 5: Run All Tests (30 min)
+### Block 5: Hostile Review (MANDATORY - 45 min)
+
+**CLAUDE.md Rule 3 Requirement:** >50 lines of new logic requires hostile review.
+
+**Review Focus Areas:**
+1. Quaternion conversion math correctness
+2. Thread safety of read operations
+3. Error handling completeness
+4. I2C bus sharing with PCA9685
+
+**Hostile Review Prompt:**
+```
+You are a Boston Dynamics firmware security engineer reviewing BNO085 driver code.
+Rate 0-10, list ALL issues by severity (CRITICAL/HIGH/MEDIUM/LOW).
+Focus on:
+- Quaternion order (Adafruit uses x,y,z,w NOT w,x,y,z)
+- I2C bus contention when sharing with PCA9685
+- Exception handling in sensor read path
+- Thread safety for concurrent access
+```
+
+**Required Actions:**
+- [ ] Run hostile review on BNO085 driver
+- [ ] Fix all CRITICAL issues before commit
+- [ ] Document any deferred HIGH/MEDIUM issues
+
+---
+
+### Block 6: Run All Tests (30 min)
 
 ```bash
 # Run full test suite
@@ -747,57 +575,60 @@ pytest tests/ -v --tb=short
 # tests/test_drivers/test_bno085.py::TestBNO085Initialization::test_default_address PASSED
 # tests/test_drivers/test_bno085.py::TestOrientationReading::test_read_orientation_returns_dataclass PASSED
 # ... (30+ BNO085 tests)
-# tests/test_animation/test_timing.py::TestKeyframe::test_creation_basic PASSED
-# ... (20+ timing tests)
 
 # Check total count
 pytest tests/ --collect-only | grep "test session starts" -A 1
-# Expected: 502+ tests
+# Expected: 480+ tests (BNO085 adds ~30 tests)
 ```
 
 ---
 
 ## Evening Session (1 hour)
 
-### Block 6: Documentation & Commit (60 min)
+### Block 7: Documentation & Commit (60 min)
 
 #### Update CHANGELOG
 ```markdown
 ## Day 8 - Wednesday, 22 January 2026
 
-**Focus:** BNO085 IMU + Animation Timing
+**Focus:** BNO085 IMU Integration & Validation (FOCUSED)
 
 ### Completed Tasks
 - [x] BNO085 hardware wiring (4 wires, I2C bus shared with PCA9685)
 - [x] BNO085 driver implementation with TDD
-- [x] Quaternion to Euler conversion
-- [x] Animation timing system with keyframe interpolation
-- [x] Easing functions (linear, ease_in, ease_out, ease_in_out)
+- [x] Quaternion to Euler conversion (Adafruit x,y,z,w order)
+- [x] Extended hardware validation tests
+- [x] Hostile review completed
 
 ### Hardware Validation
 - [ ] BNO085 detected at 0x4A: YES/NO
 - [ ] Orientation data streaming: YES/NO
 - [ ] Calibration status readable: YES/NO
+- [ ] Stability test (stdev < 1.0): YES/NO
 
 ### Metrics
-- Tests added: XX
-- Lines of code: XX
-- Total tests: 502+
+- Tests added: ~30 (BNO085 driver)
+- Lines of code: ~400
+- Total tests: 480+
 
 ### Issues Encountered
 (Document any problems here)
+
+### Deferred to Day 9
+- Animation timing system (moved due to scope reduction)
 ```
 
 #### Git Commit
 ```bash
 git add -A
-git commit -m "feat: BNO085 IMU driver + animation timing system
+git commit -m "feat: BNO085 IMU driver with hardware validation
 
 - BNO085 driver with quaternion to Euler conversion
-- Hardware validated: I2C at 0x4A
-- Animation timing system with keyframe interpolation
-- Easing functions: linear, ease_in, ease_out, ease_in_out
-- XX tests added, all passing
+- IMPORTANT: Uses Adafruit (x,y,z,w) quaternion order, NOT (w,x,y,z)
+- Hardware validated: I2C at 0x4A, shared bus with PCA9685
+- Extended validation: stability test, noise measurement
+- Hostile review completed per CLAUDE.md Rule 3
+- ~30 tests added, all passing
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
@@ -810,7 +641,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 |------------|--------|------------------|
 | BNO085 I2C detected | [ ] | Re-check wiring, SDA/SCL swap |
 | IMU driver tests passing | [ ] | Debug driver, check mock setup |
-| Animation timing tests passing | [ ] | Fix interpolation math |
+| Hostile review completed | [ ] | Run review before commit |
 | CHANGELOG updated | [ ] | Update now! |
 | Git committed | [ ] | Commit now! |
 
@@ -818,37 +649,63 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Contingency: BNO085 Not Working
+## Contingency A: BNO085 NOT ARRIVED by 10:00 AM
+
+**Decision Point:** 10:00 AM local time
+
+If BNO085 has not arrived by 10:00 AM:
+
+1. **DO NOT WAIT** - Proceed with software tasks immediately
+2. **Day 8 Alternative Plan:**
+   - Skip Blocks 1, 3, 4 (hardware-dependent)
+   - Focus on Block 2 (write driver code with mocks)
+   - Write comprehensive test suite (can run without hardware)
+   - Prepare wiring documentation for when it arrives
+3. **When BNO085 arrives later:**
+   - Insert hardware validation as first task
+   - Run prepared tests against real hardware
+   - Continue with remaining Day 8 tasks
+
+**Time allocated for alternative:** Same 5-6 hours, different allocation
+
+---
+
+## Contingency B: BNO085 Not Working (Hardware Issues)
 
 If BNO085 fails to respond after 1 hour of troubleshooting:
 
 1. **Check basics:**
-   - Correct voltage (3.3V, not 5V)
-   - SDA↔SDA, SCL↔SCL (not swapped!)
+   - Correct voltage (3.3V preferred, 3-5V acceptable with onboard regulator)
+   - SDA↔SDA, SCL↔SCL (not swapped! - recall Day 6 lesson)
    - Shared bus OK (PCA9685 still works?)
 
 2. **Try alternative address:**
    - Default: 0x4A
-   - Alternative: 0x4B (check if pin bridged)
+   - Alternative: 0x4B (check if ADR pin bridged to 3.3V)
 
 3. **If still failing:**
-   - Document failure mode
-   - Continue with animation timing (software)
+   - Document failure mode with photos
+   - Complete driver tests with mocks
    - Order replacement if defective
-   - IMU work moves to Day 9-10
+   - IMU hardware validation moves to Day 9-10
 
-**Time limit:** 1 hour troubleshooting, then pivot to software tasks.
+**Time limit:** 1 hour troubleshooting, then pivot to mock-based development.
 
 ---
 
 ## Tomorrow Preview (Day 9)
 
-- Easing function library (full implementation)
-- LED pattern library (4+ patterns)
+**Day 9 now includes Animation Timing (moved from Day 8):**
+
+- **NEW:** Animation timing system with keyframe interpolation
+- **NEW:** Basic easing functions (linear, ease_in, ease_out, ease_in_out)
+- Easing function library expansion (8+ functions)
+- LED pattern library (5 patterns)
 - Hardware test: patterns on LED ring
 - Hostile review on Day 8-9 code
 
 ---
 
 **Document Created:** 17 January 2026
+**Updated:** 22 January 2026 (Bug fixes: quaternion order, VIN voltage, scope reduction)
 **For Use On:** 22 January 2026

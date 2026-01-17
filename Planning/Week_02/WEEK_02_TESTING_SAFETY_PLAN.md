@@ -42,15 +42,18 @@ This document defines the testing strategy and safety validation procedures for 
 
 ### 1.2 Week 02 Test Targets
 
-| Day | Focus Area | New Tests | Cumulative | Target Coverage |
-|-----|------------|-----------|------------|-----------------|
-| Day 8 | BNO085 IMU + Animation Timing | +50 | 502 | 85% |
-| Day 9 | Easing Functions + LED Patterns | +45 | 547 | 87% |
-| Day 10 | Emotion State Machine | +40 | 587 | 89% |
-| Day 11 | Head Controller + Servo Safety | +35 | 622 | 91% |
-| Day 12 | Integration Tests | +30 | 652 | 93% |
-| Day 13 | Edge Cases + Stress Tests | +20 | 672 | 95% |
-| Day 14 | Hardware Validation Tests | +25 | 697 | 95% |
+| Day | Date | Focus Area | New Tests | Cumulative | Target Coverage |
+|-----|------|------------|-----------|------------|-----------------|
+| Day 8 | Wed 22 | BNO085 IMU + Animation Timing | +50 | 502 | 85% |
+| Day 9 | Thu 23 | Easing Functions + LED Patterns | +48 | 550 | 87% |
+| Day 10 | Fri 24 | Emotion State Machine | +40 | 590 | 89% |
+| Day 11 | Sat 25 | Head Controller + Servo Safety | +35 | 625 | 91% |
+| Day 12 | Sun 26 | Integration Tests | +35 | 660 | 93% |
+| Day 13 | Mon 27 | Edge Cases + Stress Tests | +15 | 675 | 95% |
+| Day 14 | Tue 28 | Final Validation | +5 | 680 | 95% |
+| [BATTERY] | When arrived | Hardware Validation Tests | +20 | 700 | 95% |
+
+**Week 02 Test Target: 700 tests** (standardized across all planning documents)
 
 ### 1.3 Test Category Requirements
 
@@ -995,7 +998,7 @@ class TestServoInterlocks:
     [ ] Update CHANGELOG
     [ ] Git tag v0.2.0
     [ ] Week 02 completion report
-    [ ] Test count target: 697
+    [ ] Test count target: 700
 ```
 
 ---
@@ -1037,11 +1040,13 @@ class TestServoInterlocks:
 
 | Metric | Target | Actual (EOW) |
 |--------|--------|--------------|
-| Total Tests | 697 | _____ |
+| Total Tests | 700 | _____ |
 | Pass Rate | 98%+ | _____ |
 | Safety Tests | 150+ | _____ |
 | Integration Tests | 50+ | _____ |
-| Hardware Tests | 25+ | _____ |
+| Hardware Tests | 20+ | _____ |
+
+**Note:** Test count target standardized to 700 across all Week 02 planning documents.
 
 ### 9.2 Safety Metrics
 
