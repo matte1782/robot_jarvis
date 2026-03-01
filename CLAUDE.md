@@ -78,6 +78,8 @@ For any security-critical code OR >50 lines of new logic:
 - **Tests:** `firmware/tests/`
 - **Arm Safety:** `firmware/src/control/arm_safety.py` (74 tests, hostile reviewed)
 - **Head Safety:** `firmware/src/control/head_safety.py`
+- **STS3215 Driver:** `firmware/src/drivers/servo/sts3215.py` (111 tests, 2× hostile reviewed)
+- **HW Validation:** `firmware/scripts/validate_sts3215.py` (ready to run on Pi)
 - **CAD Assembly Guide:** `cad_v3/ASSEMBLY_MASTER_GUIDE.md` (v1.1, bolt patterns documented)
 
 ### CAD V3 Critical Issues (Day 47 Phase 4 Triage):
@@ -96,7 +98,9 @@ For any security-critical code OR >50 lines of new logic:
 
 ### Pi Connection
 - **Hostname:** `openduck`, **User:** `pi`, SSH key-based auth
+- **IP:** 192.168.1.182 (mDNS `openduck.local` works after `sudo systemctl restart avahi-daemon`)
 - **OS:** Raspbian Bookworm 64-bit, Python 3.13
+- **Camera cmd:** `rpicam-hello` (not `libcamera-hello`)
 - **Quirk:** `pip3 install --break-system-packages` required (no venv)
 
 ### I2C Bus 1 (Pin 3=SDA, Pin 5=SCL)
@@ -110,7 +114,8 @@ For any security-critical code OR >50 lines of new logic:
 - Col A = Pi, Col B = PCA9685, Col C = BNO085, Col D/E = INMP441
 
 ### MG90S Servos (PWM via PCA9685)
-- Channels 0-4 validated (5× MG90S)
+- Channels 0-3 = head servos (neck_pitch, head_pitch, head_yaw, head_roll)
+- Channel 4 = spare (5th MG90S, unassigned — future camera tilt)
 - **Connector orientation:** Brown=GND(outer), Red=V+(mid), Yellow=Signal(inner toward chip)
 - **Power:** Pi Pin 2 (5V) → screw terminal V+, Pi Pin 6 → screw terminal GND
 - **5 servos on Pi 5V = OK.** If brownout under load → use external 5V UBEC
@@ -207,9 +212,33 @@ For any security-critical code OR >50 lines of new logic:
 - **Resolution:** Removed dead declarations, documented in module docstring that velocity enforcement is pending
 - **Prevention:** Never declare safety constants/enums without implementing the enforcement. If deferred, use a TODO comment, not a public export.
 
+### From Day 48 (3 Mar 2026):
+- **Issue:** `_validate_response` used `resp[-1]` for checksum — on a 16-servo bus, `serial.read(20)` can return trailing bytes from other servos' responses
+- **Impact:** Checksum validation passes/fails unpredictably on multi-servo bus (works in isolation, fails in production)
+- **Resolution:** Use LENGTH field (`resp[3]`) to compute exact checksum index: `cs_index = 3 + resp_len_field`
+- **Prevention:** For any serial bus protocol with multiple devices, NEVER use `resp[-1]` or slice from end. Always use the protocol's length field to find response boundaries.
+
+### From Day 48 (3 Mar 2026):
+- **Issue:** Pi hostname `openduck.local` stopped resolving via mDNS after reboot/IP change
+- **Impact:** SSH connection fails; have to scan ARP table to find Pi at 192.168.1.182
+- **Resolution:** Found Pi via `arp -a` and SSH to candidates on 192.168.1.x; `sudo systemctl restart avahi-daemon` fixes it
+- **Prevention:** After Pi reboot, restart avahi-daemon. Camera command on Bookworm/Trixie is `rpicam-hello` (not `libcamera-hello`).
+
+### From Day 49 (4 Mar 2026):
+- **Issue:** Config `robot_config.yaml` mapped head servos to PCA9685 ch 10-13, but physical wiring is ch 0-3
+- **Impact:** Any code reading config would drive wrong channels (no servo movement or wrong servo)
+- **Resolution:** Config corrected to ch 0-3. Also found `scripts/test_head_servos_usb.py` hardcoded ch 12,13 — fixed
+- **Prevention:** When changing config values, grep the ENTIRE codebase for hardcoded references (scripts, docstrings, test fixtures). Config file is currently documentation-only — no config loader exists yet (tech debt).
+
+### From Day 49 (4 Mar 2026):
+- **Issue:** `robot_config.yaml` is NOT loaded by any code — it's documentation-only
+- **Impact:** Every consumer (HeadController, LEDController, etc.) uses hardcoded defaults or explicit constructor args. Config changes don't propagate automatically.
+- **Status:** Known tech debt. Will need a config loader when E2E stack is built.
+- **Prevention:** When updating config, always check that downstream code and tests also get updated.
+
 ---
 
-**Rule Version:** 1.1
+**Rule Version:** 1.3
 **Created:** 17 January 2026
-**Last Updated:** 2 March 2026 (Day 47 Phase 4 — CAD triage lessons)
+**Last Updated:** 4 March 2026 (Day 49 — config mismatch lessons, test suite 2459 pass)
 **Reason:** Day 2 progress lost due to missing changelog updates
