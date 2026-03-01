@@ -87,8 +87,8 @@ For any security-critical code OR >50 lines of new logic:
 - **Error 4 (Hip Base Stress):** FIXED — wall 5mm + 4 ribs, needs test print
 - **Error 5 (Neck Cable Passthrough):** FIXED (Day 19)
 
-### Current Week: Week 07 (24 Feb - 2 Mar 2026)
-### Current Focus: Hardware Integration & Assembly
+### Current Week: Week 08 (3-9 Mar 2026)
+### Current Focus: STS3215 Driver + End-to-End Stack + First Prints
 
 **NOTE:** Update "Current Week" at the start of each new week. Format: `Week XX (DD-DD Mon YYYY)`
 
@@ -102,7 +102,7 @@ For any security-critical code OR >50 lines of new logic:
 ### I2C Bus 1 (Pin 3=SDA, Pin 5=SCL)
 - **PCA9685 #1:** address 0x40 (servo driver, 16 PWM channels)
 - **BNO085:** address 0x4a (IMU, quaternion readout)
-- **PCA9685 #2:** address should be 0x41 (BLOCKED — solder issue, needs rework)
+- **PCA9685 #2:** address should be 0x41 (CLOSED — not needed, only 5/16 channels used on #1)
 - **All-call:** 0x70 (PCA9685 broadcast, ignore)
 
 ### Breadboard Hub Layout
@@ -195,8 +195,21 @@ For any security-critical code OR >50 lines of new logic:
 - **Resolution:** Only 5 MG90S servos → 5/16 channels used on single PCA9685
 - **Prevention:** Before marking hardware as "critical blocker", verify actual channel/resource usage against design requirements
 
+### From Day 47 Phase 4 (2 Mar 2026):
+- **Issue:** Hostile review of arm_safety.py found TOCTOU race — e-stop could be set between lock-free check and returning valid angles
+- **Impact:** Arm could receive a valid movement command during emergency stop (microsecond window)
+- **Resolution:** Added double-check under lock before returning angles
+- **Prevention:** For safety-critical code with threading.Event + lock patterns, always re-check the atomic flag under the lock before returning results
+
+### From Day 47 Phase 4 (2 Mar 2026):
+- **Issue:** Dead safety code — `MAX_VELOCITY_DEG_PER_SEC` and `VELOCITY_EXCEEDED` declared but never enforced
+- **Impact:** False sense of safety — callers reading exports assume velocity is checked
+- **Resolution:** Removed dead declarations, documented in module docstring that velocity enforcement is pending
+- **Prevention:** Never declare safety constants/enums without implementing the enforcement. If deferred, use a TODO comment, not a public export.
+
 ---
 
-**Rule Version:** 1.0
+**Rule Version:** 1.1
 **Created:** 17 January 2026
+**Last Updated:** 2 March 2026 (Day 47 Phase 4 — CAD triage lessons)
 **Reason:** Day 2 progress lost due to missing changelog updates
