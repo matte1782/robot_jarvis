@@ -69,6 +69,22 @@ For any security-critical code OR >50 lines of new logic:
 - Tests must pass before marking task complete
 - Test count and pass rate must be logged in CHANGELOG
 
+### Rule 5: Production Frame (Sidecar Trial)
+
+Before making non-trivial code changes, produce a TASK FRAME:
+
+TASK: [one sentence — what changes and why]
+SCOPE: [exact files to be modified]
+NOT DOING: [what this task excludes]
+VERIFY BY: [test name, command, or manual check]
+
+Before starting, read `firmware/CHANGELOG.md` (recent entries), the Lessons Learned section above, and the files in SCOPE. State what prior decisions or existing code constrain this task.
+
+During implementation:
+- Before creating new functions, types, or config values: grep for existing implementations. Reuse first.
+- Do not expand scope beyond the frame without re-framing.
+- If an assumption turns out wrong, stop and flag it.
+
 ## Project-Specific Configuration
 
 ### Key Files:
@@ -90,7 +106,7 @@ For any security-critical code OR >50 lines of new logic:
 - **Error 5 (Neck Cable Passthrough):** FIXED (Day 19)
 
 ### Current Week: Week 08 (3-9 Mar 2026)
-### Current Focus: STS3215 Driver + End-to-End Stack + First Prints
+### Current Focus: CV Pipeline HW Validated — Head Print + Servo Tracking Next
 
 **NOTE:** Update "Current Week" at the start of each new week. Format: `Week XX (DD-DD Mon YYYY)`
 
@@ -142,9 +158,14 @@ For any security-critical code OR >50 lines of new logic:
 - **Latency:** ~10ms to disable all 16 PCA9685 channels via I2C
 
 ### IMX500 AI Camera (CSI)
+- **AI Accelerator:** 4 TOPS on-chip (inference on sensor, Pi gets metadata)
 - Fixed focus (NOT suitable for macro photos)
+- **Resolution:** 4056x3040 (10-bit RGGB)
 - MJPEG stream: `camera_stream.py` on port 8080
-- **Note:** `picamera2` library, `create_preview_configuration()` for video
+- **Library:** `picamera2`, `create_preview_configuration()` for video
+- **Camera cmd:** `rpicam-hello` (not `libcamera-hello` on Bookworm)
+- **Pre-trained models:** Sony provides MobileNet SSD, pose estimation, etc.
+- **CV Pipeline status:** Camera HW verified (Day 46), NO CV pipeline yet — next priority
 
 ### Integration Test Results (Day 46)
 - **5 buses simultaneously:** I2C + UART + I2S + CSI + PWM = ALL PASS
@@ -236,9 +257,21 @@ For any security-critical code OR >50 lines of new logic:
 - **Status:** Known tech debt. Will need a config loader when E2E stack is built.
 - **Prevention:** When updating config, always check that downstream code and tests also get updated.
 
+### From Day 53 (8 Mar 2026):
+- **Issue:** `sudo apt install imx500-all` fails on Debian Trixie (13) due to missing `libfarmhash0`, `jq`, `default-jre-headless`
+- **Impact:** Cannot install IMX500 AI packages via normal apt workflow
+- **Resolution:** (1) Download `libfarmhash0` .deb manually from deb.debian.org pool. (2) Skip `imx500-tools` (only for model conversion, not needed for inference). (3) Install `rpicam-apps-imx500-postprocess` + `imx500-models` directly. (4) Also need `pip3 install --break-system-packages opencv-python-headless`.
+- **Prevention:** Debian Trixie just went stable — expect package gaps. Always check `apt-cache policy <pkg>` before assuming installability. For metapackages, check sub-dependencies and install what you actually need.
+
+### From Day 53 (8 Mar 2026):
+- **Issue:** YOLO11n model (`imx500_network_yolo11n_pp.rpk`) NOT included in `imx500-models` package
+- **Impact:** Research recommended YOLO11n (best mAP) but it's not available out of the box
+- **Resolution:** Using MobileNet SSD 320x320 instead — sufficient for person detection at 1-3m
+- **Prevention:** Always verify model availability on target hardware before committing to a model choice. The Sony model zoo website lists more models than the Debian package ships.
+
 ---
 
-**Rule Version:** 1.3
+**Rule Version:** 1.4
 **Created:** 17 January 2026
-**Last Updated:** 4 March 2026 (Day 49 — config mismatch lessons, test suite 2459 pass)
+**Last Updated:** 8 March 2026 (Day 53 — IMX500 CV validated on real HW, test suite 2661 pass)
 **Reason:** Day 2 progress lost due to missing changelog updates
